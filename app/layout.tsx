@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "豆图工房 · 拼豆色号图生成器",
-  description: "在浏览器本地将图片转换为 Mard、Perler 或 Hama 色号格子图。",
+  description: "在浏览器本地将图片转换为 Mard 221 色号格子图。",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
   openGraph: {
     title: "豆图工房 · 把喜欢的画面拼出来",

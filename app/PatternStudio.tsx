@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { convertImage, type PatternResult } from "./conversion";
-import { paletteLabels, palettes, type BoardSize, type PaletteId, type RenderStyle } from "./palettes";
+import { mardPalette, paletteLabels, palettes, type BoardSize, type RenderStyle } from "./palettes";
 
 type ViewMode = "color" | "codes";
 type Crop = { zoom: number; x: number; y: number };
@@ -22,7 +22,6 @@ export default function PatternStudio() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [boardSize, setBoardSize] = useState<BoardSize>(52);
-  const [paletteId, setPaletteId] = useState<PaletteId>("mard");
   const [style, setStyle] = useState<RenderStyle>("clear");
   const [crop, setCrop] = useState<Crop>({ zoom: 1, x: 0, y: 0 });
   const [pattern, setPattern] = useState<PatternResult | null>(null);
@@ -95,7 +94,7 @@ export default function PatternStudio() {
     const data = createSourceImageData(); if (!data) return;
     setIsConverting(true);
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      setPattern(convertImage(data, boardSize, palettes[paletteId], paletteId, style));
+      setPattern(convertImage(data, boardSize, mardPalette, "mard", style));
       setViewScale(1); setViewOffset({ x: 0, y: 0 }); setIsConverting(false);
       setTimeout(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }));
@@ -162,7 +161,7 @@ export default function PatternStudio() {
   return <main>
     <header className="topbar"><a className="brand" href="#top" aria-label="豆图工房首页"><span className="brand-mark"><i/><i/><i/><i/></span><span>豆图工房<small>BEAD PATTERN STUDIO</small></span></a><div className="privacy"><LockIcon /> 图片仅在你的浏览器中处理</div></header>
 
-    <section className="hero" id="top"><div><p className="eyebrow">PIXELS INTO SOMETHING REAL</p><h1>把喜欢的画面，<br/><em>一格一格拼出来。</em></h1><p className="hero-copy">上传一张图片，选好板型和色号体系，<br className="desktop"/>几秒就能获得可以直接照着拼的高清图纸。</p></div><div className="hero-art" aria-hidden="true"><div className="sample-card"><div className="pixel-flower">{Array.from({length: 81}, (_, i) => <i key={i} className={`p${i}`}/>)}</div><span>52 × 52</span></div><div className="floating-chip chip-a">A4</div><div className="floating-chip chip-b">D2</div><div className="floating-chip chip-c">F1</div></div></section>
+    <section className="hero" id="top"><div><p className="eyebrow">PIXELS INTO SOMETHING REAL</p><h1>把喜欢的画面，<br/><em>一格一格拼出来。</em></h1><p className="hero-copy">上传一张图片，选好板型和转换风格，<br className="desktop"/>几秒就能获得 Mard 221 色高清图纸。</p></div><div className="hero-art" aria-hidden="true"><div className="sample-card"><div className="pixel-flower">{Array.from({length: 81}, (_, i) => <i key={i} className={`p${i}`}/>)}</div><span>52 × 52</span></div><div className="floating-chip chip-a">A4</div><div className="floating-chip chip-b">D2</div><div className="floating-chip chip-c">F1</div></div></section>
 
     <nav className="steps" aria-label="制作步骤"><a className="active" href="#create"><b>01</b><span>上传与设置<small>选择你的图片与拼法</small></span></a><a href="#crop"><b>02</b><span>调整构图<small>对准你最想保留的画面</small></span></a><a href="#result"><b>03</b><span>查看与导出<small>收下你的色号图纸</small></span></a></nav>
 
@@ -171,7 +170,7 @@ export default function PatternStudio() {
         {imageUrl ? <><img src={imageUrl} alt="已上传图片预览"/><div className="replace">点击更换图片</div></> : <><div className="upload-icon">↑</div><h3>把图片放在这里</h3><p>拖入、粘贴，或 <u>选择文件</u></p><small>JPEG · PNG · WebP · 最大 25 MB</small></>}
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e)=>processFile(e.target.files?.[0])}/></div>
         <div className="settings-card"><fieldset><legend>板型大小</legend><div className="choice-row board-choices">{([52,104] as BoardSize[]).map(size=><button key={size} className={boardSize===size?"selected":""} onClick={()=>{setBoardSize(size);setPattern(null);}}><b>{size===52?"小板":"大板"}</b><span>{size} × {size}</span><small>{(size*size).toLocaleString()} 颗</small></button>)}</div></fieldset>
-          <fieldset><legend>色号体系</legend><div className="choice-row palette-choices">{(["mard","perler","hama"] as PaletteId[]).map(id=><button key={id} className={paletteId===id?"selected":""} onClick={()=>{setPaletteId(id);setPattern(null);}}><span className={`palette-dot ${id}`}/><b>{paletteLabels[id]}</b><small>{palettes[id].length} 色基础色组</small></button>)}</div><p className="palette-note">色卡 v2026.08 · 屏幕显示与实物可能存在轻微色差</p></fieldset>
+          <div className="palette-fixed"><span className="palette-dot"/><div><b>Mard 221 标准色卡</b><small>A–H 与 M 系列 · 221 种颜色</small></div><strong>已启用</strong></div><p className="palette-note">色卡 v2026.08 · 屏幕显示与实物可能存在轻微色差</p>
           <fieldset><legend>转换风格</legend><div className="choice-row style-choices"><button className={style==="clear"?"selected":""} onClick={()=>{setStyle("clear");setPattern(null);}}><span className="style-pixels crisp"/><span><b>清晰模式</b><small>色块干净，更易照图拼制</small></span></button><button className={style==="soft"?"selected":""} onClick={()=>{setStyle("soft");setPattern(null);}}><span className="style-pixels soft"/><span><b>柔和模式</b><small>保留渐变与更多画面细节</small></span></button></div></fieldset>
         </div></div>{error&&<p className="error" role="alert">{error}</p>}</section>
 
