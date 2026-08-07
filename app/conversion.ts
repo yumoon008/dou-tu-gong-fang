@@ -9,8 +9,13 @@ export type PatternResult = {
   usage: PatternUsage[];
 };
 
-const rgbToLab = ([r0, g0, b0]: [number, number, number]) => {
-  const linear = (v: number) => ((v /= 255) > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92);
+type Lab = [number, number, number];
+
+const rgbToLab = ([r0, g0, b0]: [number, number, number]): Lab => {
+  const linear = (value: number) => {
+    const v = value / 255;
+    return v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92;
+  };
   const r = linear(r0), g = linear(g0), b = linear(b0);
   let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
   let y = r * 0.2126 + g * 0.7152 + b * 0.0722;
@@ -20,12 +25,64 @@ const rgbToLab = ([r0, g0, b0]: [number, number, number]) => {
   return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
 };
 
-const nearest = (rgb: [number, number, number], labs: number[][]) => {
-  const lab = rgbToLab(rgb);
+const toRadians = (degrees: number) => degrees * Math.PI / 180;
+const toDegrees = (radians: number) => radians * 180 / Math.PI;
+
+// CIEDE2000 handles low-chroma colors and perceptual hue differences much
+// better than a plain Euclidean distance in Lab (Delta E 76).
+const deltaE2000 = (lab1: Lab, lab2: Lab) => {
+  const [l1, a1, b1] = lab1, [l2, a2, b2] = lab2;
+  const c1 = Math.hypot(a1, b1), c2 = Math.hypot(a2, b2);
+  const avgC = (c1 + c2) / 2;
+  const g = 0.5 * (1 - Math.sqrt(Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7))));
+  const a1p = (1 + g) * a1, a2p = (1 + g) * a2;
+  const c1p = Math.hypot(a1p, b1), c2p = Math.hypot(a2p, b2);
+  const hue = (a: number, b: number) => {
+    const angle = toDegrees(Math.atan2(b, a));
+    return angle >= 0 ? angle : angle + 360;
+  };
+  const h1p = hue(a1p, b1), h2p = hue(a2p, b2);
+  const dLp = l2 - l1, dCp = c2p - c1p;
+  let dhp = h2p - h1p;
+  if (c1p * c2p === 0) dhp = 0;
+  else if (dhp > 180) dhp -= 360;
+  else if (dhp < -180) dhp += 360;
+  const dHp = 2 * Math.sqrt(c1p * c2p) * Math.sin(toRadians(dhp / 2));
+  const avgLp = (l1 + l2) / 2, avgCp = (c1p + c2p) / 2;
+  let avgHp = h1p + h2p;
+  if (c1p * c2p === 0) avgHp = h1p + h2p;
+  else if (Math.abs(h1p - h2p) <= 180) avgHp /= 2;
+  else if (avgHp < 360) avgHp = (avgHp + 360) / 2;
+  else avgHp = (avgHp - 360) / 2;
+  const t = 1 - 0.17 * Math.cos(toRadians(avgHp - 30))
+    + 0.24 * Math.cos(toRadians(2 * avgHp))
+    + 0.32 * Math.cos(toRadians(3 * avgHp + 6))
+    - 0.20 * Math.cos(toRadians(4 * avgHp - 63));
+  const dTheta = 30 * Math.exp(-Math.pow((avgHp - 275) / 25, 2));
+  const rc = 2 * Math.sqrt(Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7)));
+  const sl = 1 + 0.015 * Math.pow(avgLp - 50, 2) / Math.sqrt(20 + Math.pow(avgLp - 50, 2));
+  const sc = 1 + 0.045 * avgCp, sh = 1 + 0.015 * avgCp * t;
+  const rt = -Math.sin(toRadians(2 * dTheta)) * rc;
+  const lTerm = dLp / sl, cTerm = dCp / sc, hTerm = dHp / sh;
+  return Math.sqrt(lTerm * lTerm + cTerm * cTerm + hTerm * hTerm + rt * cTerm * hTerm);
+};
+
+const nearest = (rgb: [number, number, number], labs: Lab[]) => {
+  const source = rgbToLab(rgb);
+  const sourceChroma = Math.hypot(source[1], source[2]);
   let best = 0, bestDistance = Infinity;
   for (let i = 0; i < labs.length; i++) {
-    const dl = lab[0] - labs[i][0], da = lab[1] - labs[i][1], db = lab[2] - labs[i][2];
-    const distance = dl * dl + da * da + db * db;
+    const target = labs[i];
+    const targetChroma = Math.hypot(target[1], target[2]);
+    let distance = deltaE2000(source, target);
+    // Near-neutral fur, shadows and whites should stay neutral instead of
+    // drifting toward a similarly bright green, blue or purple bead.
+    if (sourceChroma < 14) {
+      distance += Math.max(0, targetChroma - sourceChroma - 2) * 0.38;
+    }
+    // A small lightness anchor prevents a hue match from making the whole
+    // pattern visibly darker than the source photograph.
+    distance += Math.abs(source[0] - target[0]) * 0.12;
     if (distance < bestDistance) { best = i; bestDistance = distance; }
   }
   return best;

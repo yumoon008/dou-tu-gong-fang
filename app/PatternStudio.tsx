@@ -25,7 +25,7 @@ export default function PatternStudio() {
   const [style, setStyle] = useState<RenderStyle>("clear");
   const [crop, setCrop] = useState<Crop>({ zoom: 1, x: 0, y: 0 });
   const [pattern, setPattern] = useState<PatternResult | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("codes");
+  const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [viewScale, setViewScale] = useState(1);
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [isConverting, setIsConverting] = useState(false);
@@ -77,17 +77,43 @@ export default function PatternStudio() {
   const createSourceImageData = () => {
     const img = imageRef.current, preview = cropCanvasRef.current;
     if (!img || !preview) return null;
-    const out = document.createElement("canvas"); out.width = boardSize; out.height = boardSize;
-    const ctx = out.getContext("2d", { willReadFrequently: true }); if (!ctx) return null;
-    ctx.fillStyle = "white"; ctx.fillRect(0, 0, boardSize, boardSize);
+    // Sample at a higher resolution first, then average in linear light. Direct
+    // browser downscaling averages gamma-encoded sRGB and makes contrasting
+    // fur, windows and other fine details look too dark and muddy.
+    const sampleFactor = 8;
+    const sampleSize = boardSize * sampleFactor;
+    const sampleCanvas = document.createElement("canvas");
+    sampleCanvas.width = sampleSize; sampleCanvas.height = sampleSize;
+    const ctx = sampleCanvas.getContext("2d", { willReadFrequently: true, colorSpace: "srgb" });
+    if (!ctx) return null;
+    ctx.fillStyle = "white"; ctx.fillRect(0, 0, sampleSize, sampleSize);
     const previewSize = preview.getBoundingClientRect().width;
     const base = Math.max(previewSize / img.width, previewSize / img.height);
     const scale = base * crop.zoom;
-    const sx = ((previewSize - img.width * scale) / 2 + crop.x) * boardSize / previewSize;
-    const sy = ((previewSize - img.height * scale) / 2 + crop.y) * boardSize / previewSize;
+    const sx = ((previewSize - img.width * scale) / 2 + crop.x) * sampleSize / previewSize;
+    const sy = ((previewSize - img.height * scale) / 2 + crop.y) * sampleSize / previewSize;
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, sx, sy, img.width * scale * boardSize / previewSize, img.height * scale * boardSize / previewSize);
-    return ctx.getImageData(0, 0, boardSize, boardSize);
+    ctx.drawImage(img, sx, sy, img.width * scale * sampleSize / previewSize, img.height * scale * sampleSize / previewSize);
+    const sampled = ctx.getImageData(0, 0, sampleSize, sampleSize);
+    const result = new ImageData(boardSize, boardSize);
+    const toLinear = (value: number) => {
+      const v = value / 255;
+      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    const toSrgb = (value: number) => {
+      const v = value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
+      return Math.max(0, Math.min(255, Math.round(v * 255)));
+    };
+    for (let y = 0; y < boardSize; y++) for (let x = 0; x < boardSize; x++) {
+      let r = 0, g = 0, b = 0;
+      for (let oy = 0; oy < sampleFactor; oy++) for (let ox = 0; ox < sampleFactor; ox++) {
+        const p = ((y * sampleFactor + oy) * sampleSize + x * sampleFactor + ox) * 4;
+        r += toLinear(sampled.data[p]); g += toLinear(sampled.data[p + 1]); b += toLinear(sampled.data[p + 2]);
+      }
+      const count = sampleFactor * sampleFactor, p = (y * boardSize + x) * 4;
+      result.data[p] = toSrgb(r / count); result.data[p + 1] = toSrgb(g / count); result.data[p + 2] = toSrgb(b / count); result.data[p + 3] = 255;
+    }
+    return result;
   };
 
   const generate = () => {
@@ -119,10 +145,12 @@ export default function PatternStudio() {
         ctx.fillText(color.code, (x + .5) * cell, (y + .52) * cell, cell * .92);
       }
     }
-    ctx.strokeStyle = "rgba(50,43,34,.25)"; ctx.lineWidth = .45 / viewScale;
-    for (let i = 0; i <= pattern.size; i++) { ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, viewport); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(viewport, i * cell); ctx.stroke(); }
-    ctx.strokeStyle = "rgba(43,37,30,.72)"; ctx.lineWidth = 1.8 / viewScale;
-    for (let i = 0; i <= pattern.size; i += 13) { ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, viewport); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(viewport, i * cell); ctx.stroke(); }
+    if (viewMode === "codes") {
+      ctx.strokeStyle = "rgba(50,43,34,.14)"; ctx.lineWidth = .35 / viewScale;
+      for (let i = 0; i <= pattern.size; i++) { ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, viewport); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(viewport, i * cell); ctx.stroke(); }
+      ctx.strokeStyle = "rgba(43,37,30,.52)"; ctx.lineWidth = 1.25 / viewScale;
+      for (let i = 0; i <= pattern.size; i += 13) { ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, viewport); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(viewport, i * cell); ctx.stroke(); }
+    }
     ctx.restore();
   }, [pattern, viewMode, viewScale, viewOffset]);
 
@@ -142,9 +170,9 @@ export default function PatternStudio() {
       const lum = color.rgb[0] * .299 + color.rgb[1] * .587 + color.rgb[2] * .114; ctx.fillStyle = lum > 145 ? "#24211d" : "#fff";
       ctx.font = `600 ${Math.max(8, cell * .29)}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(color.code, px + cell / 2, py + cell / 2, cell - 2);
     }
-    ctx.strokeStyle = "rgba(40,35,30,.28)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(40,35,30,.14)"; ctx.lineWidth = .7;
     for (let i = 0; i <= pattern.size; i++) { const p = margin + i * cell; ctx.beginPath(); ctx.moveTo(p, 125); ctx.lineTo(p, 125 + grid); ctx.stroke(); ctx.beginPath(); ctx.moveTo(margin, 125 + i * cell); ctx.lineTo(margin + grid, 125 + i * cell); ctx.stroke(); }
-    ctx.strokeStyle = "#3d372f"; ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(61,55,47,.55)"; ctx.lineWidth = 2;
     for (let i = 0; i <= pattern.size; i += 13) { const p = margin + i * cell; ctx.beginPath(); ctx.moveTo(p, 125); ctx.lineTo(p, 125 + grid); ctx.stroke(); ctx.beginPath(); ctx.moveTo(margin, 125 + i * cell); ctx.lineTo(margin + grid, 125 + i * cell); ctx.stroke(); }
     const ly = 125 + grid + 65; ctx.textAlign = "left"; ctx.fillStyle = "#27231f"; ctx.font = "700 28px Arial"; ctx.fillText(`用量表 · ${pattern.usage.length} 色`, margin, ly);
     pattern.usage.forEach((item, i) => { const col = i % legendCols, row = Math.floor(i / legendCols), x = margin + col * (grid / legendCols), y = ly + 42 + row * 60; ctx.fillStyle = `rgb(${item.color.rgb.join(",")})`; ctx.fillRect(x, y, 34, 34); ctx.strokeStyle = "#cfc5b8"; ctx.lineWidth = 1; ctx.strokeRect(x, y, 34, 34); ctx.fillStyle = "#342e28"; ctx.font = "600 18px Arial"; ctx.fillText(`${item.color.code}  ${item.count} 颗`, x + 45, y + 21); });
