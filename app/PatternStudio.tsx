@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { convertImage, type PatternResult } from "./conversion";
+import { downsampleLinearLight } from "./image-processing";
 import { mardPalette, paletteLabels, palettes, type BoardSize, type RenderStyle } from "./palettes";
 
 type ViewMode = "color" | "codes";
@@ -95,25 +96,8 @@ export default function PatternStudio() {
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, sx, sy, img.width * scale * sampleSize / previewSize, img.height * scale * sampleSize / previewSize);
     const sampled = ctx.getImageData(0, 0, sampleSize, sampleSize);
-    const result = new ImageData(boardSize, boardSize);
-    const toLinear = (value: number) => {
-      const v = value / 255;
-      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    };
-    const toSrgb = (value: number) => {
-      const v = value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055;
-      return Math.max(0, Math.min(255, Math.round(v * 255)));
-    };
-    for (let y = 0; y < boardSize; y++) for (let x = 0; x < boardSize; x++) {
-      let r = 0, g = 0, b = 0;
-      for (let oy = 0; oy < sampleFactor; oy++) for (let ox = 0; ox < sampleFactor; ox++) {
-        const p = ((y * sampleFactor + oy) * sampleSize + x * sampleFactor + ox) * 4;
-        r += toLinear(sampled.data[p]); g += toLinear(sampled.data[p + 1]); b += toLinear(sampled.data[p + 2]);
-      }
-      const count = sampleFactor * sampleFactor, p = (y * boardSize + x) * 4;
-      result.data[p] = toSrgb(r / count); result.data[p + 1] = toSrgb(g / count); result.data[p + 2] = toSrgb(b / count); result.data[p + 3] = 255;
-    }
-    return result;
+    const result = downsampleLinearLight(sampled, boardSize, sampleFactor);
+    return new ImageData(new Uint8ClampedArray(result.data), result.width, result.height);
   };
 
   const generate = () => {

@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-07T08:02:51.325Z",
+  "cases": {
+    "synthetic-color-52-clear": {
+      "meanDeltaE": 1.998677,
+      "p95DeltaE": 7.326405,
+      "meanDeltaL": 0.100713,
+      "ssim": 0.968775,
+      "edgeCorrelation": 0.986528
+    },
+    "synthetic-color-52-soft": {
+      "meanDeltaE": 0.937345,
+      "p95DeltaE": 2.351384,
+      "meanDeltaL": 0.032998,
+      "ssim": 0.996398,
+      "edgeCorrelation": 0.997351
+    },
+    "synthetic-color-104-clear": {
+      "meanDeltaE": 1.566341,
+      "p95DeltaE": 6.859261,
+      "meanDeltaL": 0.076006,
+      "ssim": 0.942424,
+      "edgeCorrelation": 0.988608
+    },
+    "synthetic-color-104-soft": {
+      "meanDeltaE": 0.59246,
+      "p95DeltaE": 2.075043,
+      "meanDeltaL": 0.013197,
+      "ssim": 0.991625,
+      "edgeCorrelation": 0.998351
+    },
+    "synthetic-detail-52-clear": {
+      "meanDeltaE": 3.982632,
+      "p95DeltaE": 5.83167,
+      "meanDeltaL": 1.872346,
+      "ssim": 0.959159,
+      "edgeCorrelation": 0.98791
+    },
+    "synthetic-detail-52-soft": {
+      "meanDeltaE": 1.046364,
+      "p95DeltaE": 2.136122,
+      "meanDeltaL": 0.000193,
+      "ssim": 0.971062,
+      "edgeCorrelation": 0.992454
+    },
+    "synthetic-detail-104-clear": {
+      "meanDeltaE": 3.211721,
+      "p95DeltaE": 5.83167,
+      "meanDeltaL": 0.298353,
+      "ssim": 0.981,
+      "edgeCorrelation": 0.988723
+    },
+    "synthetic-detail-104-soft": {
+      "meanDeltaE": 1.007363,
+      "p95DeltaE": 2.016631,
+      "meanDeltaL": -0.076132,
+      "ssim": 0.976067,
+      "edgeCorrelation": 0.991427
+    },
+    "portrait-52-clear": {
+      "meanDeltaE": 7.033939,
+      "p95DeltaE": 11.0507,
+      "meanDeltaL": 0.916234,
+      "ssim": 0.866826,
+      "edgeCorrelation": 0.915406
+    },
+    "portrait-52-soft": {
+      "meanDeltaE": 2.284086,
+      "p95DeltaE": 4.590559,
+      "meanDeltaL": 0.082594,
+      "ssim": 0.966965,
+      "edgeCorrelation": 0.986839
+    },
+    "portrait-104-clear": {
+      "meanDeltaE": 6.969338,
+      "p95DeltaE": 11.09835,
+      "meanDeltaL": 0.889153,
+      "ssim": 0.78391,
+      "edgeCorrelation": 0.860445
+    },
+    "portrait-104-soft": {
+      "meanDeltaE": 2.186369,
+      "p95DeltaE": 4.594609,
+      "meanDeltaL": 0.084132,
+      "ssim": 0.948895,
+      "edgeCorrelation": 0.978934
+    },
+    "pet-52-clear": {
+      "meanDeltaE": 6.740016,
+      "p95DeltaE": 13.729419,
+      "meanDeltaL": 1.107587,
+      "ssim": 0.924624,
+      "edgeCorrelation": 0.943641
+    },
+    "pet-52-soft": {
+      "meanDeltaE": 1.738587,
+      "p95DeltaE": 4.033612,
+      "meanDeltaL": 0.014406,
+      "ssim": 0.989535,
+      "edgeCorrelation": 0.990496
+    },
+    "pet-104-clear": {
+      "meanDeltaE": 6.594271,
+      "p95DeltaE": 13.758942,
+      "meanDeltaL": 0.967843,
+      "ssim": 0.898076,
+      "edgeCorrelation": 0.940144
+    },
+    "pet-104-soft": {
+      "meanDeltaE": 1.712531,
+      "p95DeltaE": 4.099862,
+      "meanDeltaL": 0.021474,
+      "ssim": 0.982464,
+      "edgeCorrelation": 0.988482
+    },
+    "landscape-52-clear": {
+      "meanDeltaE": 6.948171,
+      "p95DeltaE": 12.901151,
+      "meanDeltaL": -0.145367,
+      "ssim": 0.856064,
+      "edgeCorrelation": 0.871678
+    },
+    "landscape-52-soft": {
+      "meanDeltaE": 2.120226,
+      "p95DeltaE": 4.545573,
+      "meanDeltaL": 0.021565,
+      "ssim": 0.978987,
+      "edgeCorrelation": 0.978975
+    },
+    "landscape-104-clear": {
+      "meanDeltaE": 6.80094,
+      "p95DeltaE": 12.768317,
+      "meanDeltaL": -0.035646,
+      "ssim": 0.820768,
+      "edgeCorrelation": 0.830958
+    },
+    "landscape-104-soft": {
+      "meanDeltaE": 1.977596,
+      "p95DeltaE": 4.372496,
+      "meanDeltaL": 0.038575,
+      "ssim": 0.969881,
+      "edgeCorrelation": 0.973231
+    },
+    "still-life-52-clear": {
+      "meanDeltaE": 6.322639,
+      "p95DeltaE": 11.540073,
+      "meanDeltaL": 1.525713,
+      "ssim": 0.953435,
+      "edgeCorrelation": 0.949367
+    },
+    "still-life-52-soft": {
+      "meanDeltaE": 2.552708,
+      "p95DeltaE": 7.003745,
+      "meanDeltaL": 0.329597,
+      "ssim": 0.990783,
+      "edgeCorrelation": 0.985136
+    },
+    "still-life-104-clear": {
+      "meanDeltaE": 6.323896,
+      "p95DeltaE": 11.539763,
+      "meanDeltaL": 1.638645,
+      "ssim": 0.912616,
+      "edgeCorrelation": 0.938487
+    },
+    "still-life-104-soft": {
+      "meanDeltaE": 2.682229,
+      "p95DeltaE": 7.860381,
+      "meanDeltaL": 0.429857,
+      "ssim": 0.983129,
+      "edgeCorrelation": 0.985016
+    }
+  }
+}

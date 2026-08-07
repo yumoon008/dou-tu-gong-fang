@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/artifacts/
+/tsconfig.tsbuildinfo
 
 # next.js
 /.next/

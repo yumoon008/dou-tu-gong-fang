@@ -94,6 +94,21 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - `npm test`: build the starter and verify its rendered loading skeleton
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 
+## Image Quality Regression
+
+- `pnpm exec playwright install chromium`: install the pinned local test browser
+  once before the first quality run.
+- `pnpm test:image-processing`: run fast palette, transparency, neutral-color,
+  and metric correctness checks.
+- `pnpm test:image-quality`: upload the six committed fixtures in Chromium,
+  exercise both board sizes and render styles, compare all 24 results with the
+  approved baseline, and write `artifacts/image-quality/index.html`.
+- `pnpm test:image-quality:update`: intentionally replace the approved baseline
+  after reviewing the generated input/output/heatmap report.
+
+Pull requests and `main` updates publish the report as a 30-day GitHub Actions
+artifact. Regressions produce warnings but do not block the Pages deployment.
+
 ## Learn More
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)

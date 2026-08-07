@@ -1,3 +1,4 @@
+import type { RgbaImage } from "./image-processing";
 import type { BoardSize, PaletteColor, PaletteId, RenderStyle } from "./palettes";
 
 export type PatternUsage = { color: PaletteColor; count: number; percent: number };
@@ -88,7 +89,10 @@ const nearest = (rgb: [number, number, number], labs: Lab[]) => {
   return best;
 };
 
-export function convertImage(data: ImageData, size: BoardSize, palette: PaletteColor[], paletteId: PaletteId, style: RenderStyle): PatternResult {
+export function convertImage(data: RgbaImage, size: BoardSize, palette: PaletteColor[], paletteId: PaletteId, style: RenderStyle): PatternResult {
+  if (data.width !== size || data.height !== size) {
+    throw new Error(`Expected ${size}×${size} source pixels, received ${data.width}×${data.height}.`);
+  }
   const labs = palette.map((color) => rgbToLab(color.rgb));
   const work = new Float32Array(data.data.length);
   for (let i = 0; i < data.data.length; i += 4) {

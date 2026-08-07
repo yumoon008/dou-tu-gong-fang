@@ -1,0 +1,43 @@
+name: Image quality report
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.16.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run deterministic conversion tests
+        run: pnpm run test:image-processing
+      - name: Generate image quality report
+        id: quality
+        continue-on-error: true
+        run: pnpm run test:image-quality
+      - name: Upload image quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-quality-report
+          path: artifacts/image-quality
+          retention-days: 30
